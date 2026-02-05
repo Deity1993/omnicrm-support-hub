@@ -130,6 +130,44 @@ const App: React.FC = () => {
     }
   };
 
+  const updateCustomer = async (customer: Customer) => {
+    const response = await fetch(`/api/customers/${customer.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(customer)
+    });
+    if (response.ok) {
+      const updated = await response.json();
+      setCustomers(prev => prev.map(c => (c.id === customer.id ? updated : c)));
+    }
+  };
+
+  const deleteCustomer = async (id: string) => {
+    const response = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+    if (response.ok) {
+      setCustomers(prev => prev.filter(c => c.id !== id));
+    }
+  };
+
+  const updateTicket = async (ticket: Ticket) => {
+    const response = await fetch(`/api/tickets/${ticket.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ticket)
+    });
+    if (response.ok) {
+      const updated = await response.json();
+      setTickets(prev => prev.map(t => (t.id === ticket.id ? updated : t)));
+    }
+  };
+
+  const deleteTicket = async (id: string) => {
+    const response = await fetch(`/api/tickets/${id}`, { method: 'DELETE' });
+    if (response.ok) {
+      setTickets(prev => prev.filter(t => t.id !== id));
+    }
+  };
+
   const handleLogin = (username: string, password: string) => {
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (!user || user.password !== password) {
@@ -171,9 +209,9 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard customers={customers} tickets={tickets} />;
       case 'customers':
-        return <Customers customers={customers} onAdd={addCustomer} />;
+        return <Customers customers={customers} onAdd={addCustomer} onUpdate={updateCustomer} onDelete={deleteCustomer} />;
       case 'tickets':
-        return <Tickets tickets={tickets} customers={customers} onUpdateStatus={updateTicketStatus} />;
+        return <Tickets tickets={tickets} customers={customers} onUpdateStatus={updateTicketStatus} onUpdate={updateTicket} onDelete={deleteTicket} />;
       case 'email-import':
         return <EmailImport onAddTicket={addTicket} customers={customers} onAddCustomer={addCustomer} />;
       case 'user-management':

@@ -118,6 +118,58 @@ app.patch('/api/tickets/:id/status', (req, res) => {
   res.json(ticket);
 });
 
+app.patch('/api/customers/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, company, email, phone, status } = req.body || {};
+  if (!name || !company || !email) {
+    return res.status(400).json({ error: 'name, company, email required' });
+  }
+  const result = db.prepare(
+    `UPDATE customers SET name = ?, company = ?, email = ?, phone = ?, status = ? WHERE id = ?`
+  ).run(name, company, email, phone || '', status || 'Aktiv', id);
+
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'customer not found' });
+  }
+  const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(id);
+  res.json(customer);
+});
+
+app.patch('/api/tickets/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, description, status, priority, assignedTo } = req.body || {};
+  if (!title || !description) {
+    return res.status(400).json({ error: 'title, description required' });
+  }
+  const result = db.prepare(
+    `UPDATE tickets SET title = ?, description = ?, status = ?, priority = ?, assignedTo = ? WHERE id = ?`
+  ).run(title, description, status || 'Offen', priority || 'Mittel', assignedTo || null, id);
+
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'ticket not found' });
+  }
+  const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
+  res.json(ticket);
+});
+
+app.delete('/api/customers/:id', (req, res) => {
+  const { id } = req.params;
+  const result = db.prepare('DELETE FROM customers WHERE id = ?').run(id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'customer not found' });
+  }
+  res.json({ deleted: id });
+});
+
+app.delete('/api/tickets/:id', (req, res) => {
+  const { id } = req.params;
+  const result = db.prepare('DELETE FROM tickets WHERE id = ?').run(id);
+  if (result.changes === 0) {
+    return res.status(404).json({ error: 'ticket not found' });
+  }
+  res.json({ deleted: id });
+});
+
 app.listen(PORT, () => {
   console.log(`OmniCRM API running on ${PORT}`);
 });

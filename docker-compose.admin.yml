@@ -1,0 +1,22 @@
+﻿version: "3"
+services:
+  admin-proxy:
+    image: nginx:alpine
+    container_name: admin-proxy
+    volumes:
+      - /var/www/admin_page/dist:/usr/share/nginx/html:ro
+      - /root/admin-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - n8n-compose_default
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.admin.rule: "Host(`zubenko.de`) && PathPrefix(`/`)"
+      traefik.http.routers.admin.entrypoints: "web,websecure"
+      traefik.http.routers.admin.tls: "true"
+      traefik.http.routers.admin.priority: "1"
+      traefik.http.services.admin.loadbalancer.server.port: "80"
+    restart: unless-stopped
+
+networks:
+  n8n-compose_default:
+    external: true

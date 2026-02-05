@@ -1,16 +1,20 @@
 
 import React, { useState } from 'react';
 import { Customer, CustomerStatus } from '../types';
-import { Search, UserPlus, MoreHorizontal, Mail, Phone, Building2 } from 'lucide-react';
+import { Search, UserPlus, MoreHorizontal, Mail, Phone, Building2, Edit2, Trash2 } from 'lucide-react';
 
 interface CustomersProps {
   customers: Customer[];
   onAdd: (customer: Omit<Customer, 'id' | 'createdAt'>) => Promise<void> | void;
+  onUpdate: (customer: Customer) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-const Customers: React.FC<CustomersProps> = ({ customers, onAdd }) => {
+const Customers: React.FC<CustomersProps> = ({ customers, onAdd, onUpdate, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [newCustomer, setNewCustomer] = useState({
     name: '', company: '', email: '', phone: '', status: CustomerStatus.ACTIVE
   });
@@ -25,6 +29,26 @@ const Customers: React.FC<CustomersProps> = ({ customers, onAdd }) => {
     await onAdd(newCustomer);
     setShowAddModal(false);
     setNewCustomer({ name: '', company: '', email: '', phone: '', status: CustomerStatus.ACTIVE });
+  };
+
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingCustomer) {
+      await onUpdate(editingCustomer);
+      setShowEditModal(false);
+      setEditingCustomer(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Sind Sie sicher, dass Sie diesen Kunden löschen möchten?')) {
+      await onDelete(id);
+    }
   };
 
   return (
@@ -100,9 +124,18 @@ const Customers: React.FC<CustomersProps> = ({ customers, onAdd }) => {
                 <td className="px-6 py-4 text-sm text-slate-500">
                   {customer.createdAt}
                 </td>
-                <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-2 hover:bg-slate-200 rounded-lg transition-colors">
-                    <MoreHorizontal size={18} />
+                <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 justify-end">
+                  <button 
+                    onClick={() => handleEdit(customer)}
+                    className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(customer.id)}
+                    className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={18} />
                   </button>
                 </td>
               </tr>
@@ -147,6 +180,48 @@ const Customers: React.FC<CustomersProps> = ({ customers, onAdd }) => {
               <div className="flex gap-3 justify-end pt-4">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-6 py-2.5 font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Abbrechen</button>
                 <button type="submit" className="px-6 py-2.5 font-bold bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all">Erstellen</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingCustomer && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border animate-in zoom-in duration-200">
+            <form onSubmit={handleUpdateSubmit} className="p-8 space-y-6">
+              <h3 className="text-2xl font-bold">Kunden bearbeiten</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold">Name</label>
+                  <input required className="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={editingCustomer.name} onChange={e => setEditingCustomer({...editingCustomer, name: e.target.value})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold">Firma</label>
+                  <input required className="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={editingCustomer.company} onChange={e => setEditingCustomer({...editingCustomer, company: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold">E-Mail</label>
+                    <input type="email" required className="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={editingCustomer.email} onChange={e => setEditingCustomer({...editingCustomer, email: e.target.value})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold">Telefon</label>
+                    <input className="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={editingCustomer.phone} onChange={e => setEditingCustomer({...editingCustomer, phone: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold">Status</label>
+                  <select className="w-full p-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" value={editingCustomer.status} onChange={e => setEditingCustomer({...editingCustomer, status: e.target.value as CustomerStatus})}>
+                    <option value={CustomerStatus.ACTIVE}>Aktiv</option>
+                    <option value={CustomerStatus.LEAD}>Lead</option>
+                    <option value={CustomerStatus.INACTIVE}>Inaktiv</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-4">
+                <button type="button" onClick={() => setShowEditModal(false)} className="px-6 py-2.5 font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all">Abbrechen</button>
+                <button type="submit" className="px-6 py-2.5 font-bold bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all">Speichern</button>
               </div>
             </form>
           </div>
