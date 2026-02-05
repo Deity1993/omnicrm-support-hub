@@ -1,0 +1,38 @@
+services:
+  support:
+    build: .
+    image: omnicrm-support:latest
+    container_name: omnicrm-support
+    networks:
+      - n8n-compose_default
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.support.rule=Host(`support.zubenko.de`)
+      - traefik.http.routers.support.entrypoints=web,websecure
+      - traefik.http.routers.support.tls=true
+      - traefik.http.services.support.loadbalancer.server.port=80
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: omnicrm-api:latest
+    container_name: omnicrm-api
+    networks:
+      - n8n-compose_default
+    environment:
+      - DB_PATH=/data/omnicrm.db
+    volumes:
+      - ./data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.omnicrm-api.rule=Host(`support.zubenko.de`) && PathPrefix(`/api`)
+      - traefik.http.routers.omnicrm-api.entrypoints=web,websecure
+      - traefik.http.routers.omnicrm-api.tls=true
+      - traefik.http.services.omnicrm-api.loadbalancer.server.port=3001
+    restart: unless-stopped
+
+networks:
+  n8n-compose_default:
+    external: true

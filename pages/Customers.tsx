@@ -5,7 +5,7 @@ import { Search, UserPlus, MoreHorizontal, Mail, Phone, Building2 } from 'lucide
 
 interface CustomersProps {
   customers: Customer[];
-  onAdd: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
+  onAdd: (customer: Omit<Customer, 'id' | 'createdAt'>) => Promise<void> | void;
 }
 
 const Customers: React.FC<CustomersProps> = ({ customers, onAdd }) => {
@@ -20,9 +20,9 @@ const Customers: React.FC<CustomersProps> = ({ customers, onAdd }) => {
     c.company.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd(newCustomer);
+    await onAdd(newCustomer);
     setShowAddModal(false);
     setNewCustomer({ name: '', company: '', email: '', phone: '', status: CustomerStatus.ACTIVE });
   };

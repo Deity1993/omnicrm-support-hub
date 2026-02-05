@@ -10,16 +10,6 @@ import Login from './pages/Login';
 import UserManagement from './pages/UserManagement';
 import { Customer, Ticket, CustomerStatus, TicketStatus, TicketPriority, User, SupportSettings } from './types';
 
-const INITIAL_CUSTOMERS: Customer[] = [
-  { id: '1', name: 'Max Mustermann', company: 'Muster AG', email: 'max@muster.de', phone: '0123-45678', status: CustomerStatus.ACTIVE, createdAt: '2023-10-01' },
-  { id: '2', name: 'Erika Schmidt', company: 'Schmidt & Partner', email: 'erika@schmidt.de', phone: '0987-65432', status: CustomerStatus.LEAD, createdAt: '2023-11-15' },
-];
-
-const INITIAL_TICKETS: Ticket[] = [
-  { id: 't1', customerId: '1', title: 'Login-Probleme', description: 'Kunde kann sich nicht anmelden', status: TicketStatus.OPEN, priority: TicketPriority.HIGH, createdAt: '2024-01-20' },
-  { id: 't2', customerId: '2', title: 'Preisanfrage', description: 'Interesse an neuem Software-Modul', status: TicketStatus.IN_PROGRESS, priority: TicketPriority.MEDIUM, createdAt: '2024-01-22' },
-];
-
 const INITIAL_USERS: User[] = [
   {
     id: 'u1',
@@ -42,14 +32,8 @@ const DEFAULT_SUPPORT_SETTINGS: SupportSettings = {
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState('dashboard');
-  const [customers, setCustomers] = useState<Customer[]>(() => {
-    const saved = localStorage.getItem('omnicrm_customers');
-    return saved ? JSON.parse(saved) : INITIAL_CUSTOMERS;
-  });
-  const [tickets, setTickets] = useState<Ticket[]>(() => {
-    const saved = localStorage.getItem('omnicrm_tickets');
-    return saved ? JSON.parse(saved) : INITIAL_TICKETS;
-  });
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [users, setUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('omnicrm_users');
     return saved ? JSON.parse(saved) : INITIAL_USERS;
@@ -65,12 +49,32 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('omnicrm_customers', JSON.stringify(customers));
-  }, [customers]);
+    const loadData = async () => {
+      try {
+        const [customersRes, ticketsRes] = await Promise.all([
+          fetch('/api/customers'),
+          fetch('/api/tickets')
+        ]);
+        if (customersRes.ok) {
+          const data = await customersRes.json();
+          setCustomers(data);
+        } else {
+          setCustomers([]);
+        }
+        if (ticketsRes.ok) {
+          const data = await ticketsRes.json();
+          setTickets(data);
+        } else {
+          setTickets([]);
+        }
+      } catch {
+        setCustomers([]);
+        setTickets([]);
+      }
+    };
 
-  useEffect(() => {
-    localStorage.setItem('omnicrm_tickets', JSON.stringify(tickets));
-  }, [tickets]);
+    loadData();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('omnicrm_users', JSON.stringify(users));
@@ -88,26 +92,42 @@ const App: React.FC = () => {
     }
   }, [currentUser]);
 
-  const addCustomer = (customer: Omit<Customer, 'id' | 'createdAt'>) => {
-    const newCustomer: Customer = {
-      ...customer,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setCustomers([...customers, newCustomer]);
+  const addCustomer = async (customer: Omit<Customer, 'id' | 'createdAt'>) => {
+    const response = await fetch('/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(customer)
+    });
+    if (response.ok) {
+      const newCustomer = await response.json();
+      setCustomers(prev => [newCustomer, ...prev]);
+      return;
+    }
   };
 
-  const addTicket = (ticket: Omit<Ticket, 'id' | 'createdAt'>) => {
-    const newTicket: Ticket = {
-      ...ticket,
-      id: `t-${Math.random().toString(36).substr(2, 5)}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setTickets([newTicket, ...tickets]);
+  const addTicket = async (ticket: Omit<Ticket, 'id' | 'createdAt'>) => {
+    const response = await fetch('/api/tickets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ticket)
+    });
+    if (response.ok) {
+      const newTicket = await response.json();
+      setTickets(prev => [newTicket, ...prev]);
+      return;
+    }
   };
 
-  const updateTicketStatus = (id: string, status: TicketStatus) => {
-    setTickets(tickets.map(t => t.id === id ? { ...t, status } : t));
+  const updateTicketStatus = async (id: string, status: TicketStatus) => {
+    const response = await fetch(`/api/tickets/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    if (response.ok) {
+      const updated = await response.json();
+      setTickets(prev => prev.map(t => (t.id === id ? updated : t)));
+    }
   };
 
   const handleLogin = (username: string, password: string) => {

@@ -5,8 +5,8 @@ import { Customer, CustomerStatus, Ticket, TicketStatus, TicketPriority } from '
 import { Sparkles, Mail, Send, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface EmailImportProps {
-  onAddTicket: (ticket: Omit<Ticket, 'id' | 'createdAt'>) => void;
-  onAddCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
+  onAddTicket: (ticket: Omit<Ticket, 'id' | 'createdAt'>) => Promise<void> | void;
+  onAddCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => Promise<void> | void;
   customers: Customer[];
 }
 
@@ -25,7 +25,7 @@ const EmailImport: React.FC<EmailImportProps> = ({ onAddTicket, onAddCustomer, c
     setStep('review');
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     // 1. Check if customer exists
     let customer = customers.find(c => c.email.toLowerCase() === (parsedResult.customerEmail || '').toLowerCase());
     
@@ -42,7 +42,7 @@ const EmailImport: React.FC<EmailImportProps> = ({ onAddTicket, onAddCustomer, c
       // We simulate adding the customer here and getting an ID
       // In a real app, the parent would return the new ID
       const tempId = `new-${Date.now()}`;
-      onAddCustomer(newCustomer);
+      await onAddCustomer(newCustomer);
       customerId = tempId; 
     } else if (customer) {
       customerId = customer.id;
@@ -50,7 +50,7 @@ const EmailImport: React.FC<EmailImportProps> = ({ onAddTicket, onAddCustomer, c
       customerId = '1'; // Fallback to first customer for demo
     }
 
-    onAddTicket({
+    await onAddTicket({
       customerId: customerId,
       title: parsedResult.title,
       description: parsedResult.description,

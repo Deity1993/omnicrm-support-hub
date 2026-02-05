@@ -11,15 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
-
-# Environment files
-.env
-.env.local
-.env.production
-.env.*.local
-
-# Deployment
-deploy-package/
+data/
+*.db
 
 # Editor directories and files
 .vscode/*
