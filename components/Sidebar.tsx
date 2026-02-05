@@ -6,20 +6,26 @@ import {
   Ticket as TicketIcon, 
   MailPlus, 
   Settings,
-  TrendingUp
+  TrendingUp,
+  UserCog,
+  LogOut
 } from 'lucide-react';
+import { User } from '../types';
 
 interface SidebarProps {
   currentView: string;
   onNavigate: (view: string) => void;
+  currentUser: User;
+  onLogout: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'customers', label: 'Kunden', icon: Users },
     { id: 'tickets', label: 'Tickets', icon: TicketIcon },
     { id: 'email-import', label: 'E-Mail Import', icon: MailPlus },
+    { id: 'user-management', label: 'User Management', icon: UserCog },
     { id: 'settings', label: 'Einstellungen', icon: Settings },
   ];
 
@@ -56,12 +62,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
       <div className="p-6 border-t border-slate-800">
         <div className="flex items-center gap-3 px-2 py-3 bg-slate-800/50 rounded-xl">
           <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold">
-            AD
+            {currentUser.name.charAt(0)}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white">Admin User</span>
-            <span className="text-xs text-slate-500">Premium Plan</span>
+            <span className="text-sm font-semibold text-white">{currentUser.name}</span>
+            <span className="text-xs text-slate-500">{currentUser.role}</span>
           </div>
+          <button
+            onClick={onLogout}
+            className="ml-auto p-2 rounded-lg hover:bg-slate-700 text-slate-300"
+            title="Abmelden"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </div>

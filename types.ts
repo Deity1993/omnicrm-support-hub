@@ -40,6 +40,27 @@ export interface Ticket {
   createdAt: string;
 }
 
+export type UserStatus = 'Aktiv' | 'Gesperrt';
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  role: string;
+  status: UserStatus;
+  createdAt: string;
+  lastLogin?: string;
+}
+
+export interface SupportSettings {
+  supportEmail: string;
+  supportPhone: string;
+  slaHours: number;
+  businessHours: string;
+  escalationContact: string;
+}
+
 export interface AppSettings {
   companyName: string;
   aiSummarizationEnabled: boolean;
